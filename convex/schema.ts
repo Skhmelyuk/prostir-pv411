@@ -61,4 +61,14 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_post", ["postId"])
     .index("by_both", ["userId", "postId"]),
+
+  stories: defineTable({
+    userId: v.id("users"),
+    imageUrl: v.string(),
+    storageId: v.id("_storage"),
+    expiresAt: v.number(), // Timestamp закінчення дії історії (24 години)
+    views: v.number(),     // Кількість переглядів
+  })
+    .index("by_user", ["userId"])
+    .index("by_expires", ["expiresAt"]),
 });
