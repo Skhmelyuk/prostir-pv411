@@ -44,7 +44,7 @@ export function NotificationItem({ notification }: NotificationProps) {
       <TouchableOpacity
         onPress={() => router.push(`/user/${notification.sender._id}`)}
         activeOpacity={0.8}
-        className="flex-row items-center flex-1 mr-3"
+        className="flex-row items-center flex-2 mr-3"
       >
         {/* Аватар з бейджем типу сповіщення */}
         <View className="relative mr-3">
@@ -62,6 +62,7 @@ export function NotificationItem({ notification }: NotificationProps) {
             )}
           </View>
         </View>
+        </TouchableOpacity>
 
         {/* Текст сповіщення */}
         <View className="flex-1">
@@ -77,7 +78,7 @@ export function NotificationItem({ notification }: NotificationProps) {
             })}
           </Text>
         </View>
-      </TouchableOpacity>
+      
 
       {/* Мініатюра поста, до якого відноситься сповіщення */}
       {notification.post && (

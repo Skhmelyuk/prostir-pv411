@@ -5,14 +5,22 @@ import {
   FlatList,
   ActivityIndicator,
 } from "react-native";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { COLORS } from "@/constants/theme";
-import { NotificationItem } from "@/components/NotificationItem";
+
 import { Ionicons } from "@expo/vector-icons";
+import { SwipeableNotificationItem } from "@/components/SwipeableNotificationItem";
+import { Id } from "@/convex/_generated/dataModel";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 export default function NotificationsScreen() {
   const notifications = useQuery(api.notifications.getNotifications);
+  const deleteNotification = useMutation(api.notifications.deleteNotification)
+
+  const onDelete = (id: Id<"notifications">) => {
+    deleteNotification({notificationId: id})
+  }
 
   if (notifications === undefined) {
     return (
@@ -23,6 +31,7 @@ export default function NotificationsScreen() {
   }
 
   return (
+    <GestureHandlerRootView>
     <View className="flex-1 bg-black">
       {/* Хедер сторінки */}
       <View className="px-4 py-3 border-b border-surface">
@@ -47,12 +56,13 @@ export default function NotificationsScreen() {
       ) : (
         <FlatList
           data={notifications}
-          renderItem={({ item }) => <NotificationItem notification={item} />}
+          renderItem={({ item }) => <SwipeableNotificationItem notification={item} onDelete={onDelete} />}
           keyExtractor={(item) => item._id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 60 }}
         />
       )}
     </View>
+    </GestureHandlerRootView>
   );
 }

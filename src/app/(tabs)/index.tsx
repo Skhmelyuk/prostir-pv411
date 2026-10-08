@@ -42,7 +42,7 @@ export default function FeedScreen() {
       {/* Стрічка постів з секцією історій у хедері списку */}
       <FlatList
         data={posts}
-        renderItem={({ item }) => <Post post={item} />}
+        renderItem={({ item, index }) => <Post post={item} index={index} />}
         keyExtractor={(item) => item._id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 60 }}

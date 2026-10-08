@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useConvexAuth } from "@convex-dev/auth/react";
 import * as SplashScreen from "expo-splash-screen";
 import { Stack, useRouter, useSegments } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 
 export default function InitialLayout() {
   const { isAuthenticated, isLoading } = useConvexAuth();
@@ -31,5 +32,10 @@ export default function InitialLayout() {
     return null;
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <>
+      <StatusBar style="light" />
+      <Stack screenOptions={{ headerShown: false }} />
+    </>
+  );
 }

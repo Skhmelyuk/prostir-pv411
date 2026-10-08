@@ -15,6 +15,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { EditProfileModal } from "@/components/EditProfileModal";
+import { HoldToConfirmButton } from "@/components/HoldToConfirmButton";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -108,23 +109,14 @@ export default function ProfileScreen() {
             ) : null}
           </View>
 
-          <View className="flex-row gap-2">
-            <TouchableOpacity
-              onPress={() => setIsEditModalVisible(true)}
-              className="flex-1 bg-surface border border-surfaceLight py-2.5 rounded-xl items-center active:bg-surfaceLight"
-              activeOpacity={0.8}
-            >
-              <Text className="text-white font-semibold text-sm">Редагувати профіль</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={async () => await signOut()}
-              className="px-4 bg-red-600/20 border border-red-500/30 py-2.5 rounded-xl items-center justify-center active:bg-red-600/30"
-              activeOpacity={0.8}
-            >
-              <Ionicons name="log-out-outline" size={18} color="#EF4444" />
-            </TouchableOpacity>
-          </View>
+          {/* Кнопка редагування профілю */}
+          <TouchableOpacity
+            onPress={() => setIsEditModalVisible(true)}
+            className="w-full bg-surface border border-surfaceLight py-2.5 rounded-xl items-center active:bg-surfaceLight"
+            activeOpacity={0.8}
+          >
+            <Text className="text-white font-semibold text-sm">Редагувати профіль</Text>
+          </TouchableOpacity>
         </View>
 
         <View className="flex-row border-t border-b border-surface py-3 justify-center items-center">
@@ -143,7 +135,7 @@ export default function ProfileScreen() {
             </Text>
           </View>
         ) : (
-          <View className="flex-row flex-wrap p-0.5 pb-20">
+          <View className="flex-row flex-wrap p-0.5">
             {posts.map((post) => (
               <View key={post._id} className="w-1/3 aspect-square p-0.5">
                 <TouchableOpacity
@@ -161,6 +153,25 @@ export default function ProfileScreen() {
             ))}
           </View>
         )}
+
+        {/* Блок керування акаунтом та безпечний вихід */}
+        <View className="p-4 mt-6 mb-10 border-t border-surface">
+          <Text className="text-grey text-xs font-semibold uppercase mb-3 tracking-wider">
+            Обліковий запис
+          </Text>
+
+          <HoldToConfirmButton
+            title="Утримуйте для виходу з акаунта"
+            confirmTitle="Виходимо..."
+            icon="log-out-outline"
+            variant="danger"
+            durationMs={1200}
+            onConfirm={async () => {
+              await signOut();
+              router.replace("/(auth)/login");
+            }}
+          />
+        </View>
       </ScrollView>
 
       <EditProfileModal

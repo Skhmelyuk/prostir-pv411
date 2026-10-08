@@ -1,6 +1,8 @@
 // convex/notifications.ts
-import { query } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+
+import {v} from "convex/values"
 
 /**
  * Отримує список сповіщень для поточного користувача
@@ -58,5 +60,32 @@ export const getNotifications = query({
     return notificationsWithInfo.filter(
       (item): item is NonNullable<typeof item> => item !== null,
     );
+  },
+});
+
+
+export const deleteNotification = mutation({
+  args: {
+    notificationId: v.id("notifications"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new Error("Unauthorized: Неавторизований доступ");
+    }
+
+    const notification = await ctx.db.get(args.notificationId);
+    if (!notification) {
+      throw new Error("Сповіщення не знайдено");
+    }
+
+    // Перевірка безпеки: чи належить сповіщення поточному користувачу
+    if (notification.receiverId !== userId) {
+      throw new Error("Ви можете видаляти лише власні сповіщення");
+    }
+
+    await ctx.db.delete(args.notificationId);
+
+    return { success: true };
   },
 });
