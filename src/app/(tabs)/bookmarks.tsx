@@ -29,7 +29,7 @@ export default function BookmarksScreen() {
     <View className="flex-1 bg-black">
       {/* Хедер сторінки */}
       <View className="px-4 py-3 border-b border-surface">
-        <Text className="text-2xl font-bold text-primary">Закладки</Text>
+        <Text className="text-2xl font-bold text-primary">Закладки!!!!</Text>
       </View>
 
       {bookmarkedPosts.length === 0 ? (
