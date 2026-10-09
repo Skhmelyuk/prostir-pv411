@@ -142,7 +142,7 @@ export default function CreateScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={26} color={COLORS.primary} />
           </TouchableOpacity>
-          <Text className="text-white text-lg font-semibold">Новий пост</Text>
+          <Text className="text-white text-lg font-semibold">Новий пост !!!!!!!!!</Text>
           <View className="w-7" />
         </View>
 
