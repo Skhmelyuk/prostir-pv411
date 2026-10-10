@@ -19,6 +19,8 @@ import {
 import { useRouter } from "expo-router";
 import { CommentsModal } from "./CommentsModal";
 import { HoldToConfirmButton } from "./HoldToConfirmButton";
+import { PostAudioPlayer } from "./PostAudioPlayer";
+import { VideoNotePlayer } from "./VideoNotePlayer";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
@@ -34,8 +36,13 @@ export type PostProps = {
   post: {
     _id: Id<"posts">;
     userId?: Id<"users">;
-    imageUrl: string;
+    imageUrl?: string;
     caption?: string;
+    audioUrl?: string;
+    audioDuration?: number;
+    videoUrl?: string;
+    videoDuration?: number;
+    isVideoNote?: boolean;
     likes: number;
     comments: number;
     _creationTime: number;
@@ -195,12 +202,30 @@ export const Post = ({ post, index }: PostProps) => {
         )}
       </View>
 
-      {/* Зображення поста */}
-      <Image
-        source={{ uri: post.imageUrl }}
-        className="w-full aspect-square bg-surface"
-        resizeMode="cover"
-      />
+      {/* Медіаконтент поста: або відеокружечок, або зображення */}
+      {post.videoUrl && post.isVideoNote ? (
+        <View className="w-full aspect-square bg-surface/40 items-center justify-center py-4">
+          <VideoNotePlayer
+            videoUrl={post.videoUrl}
+            duration={post.videoDuration}
+            size={260}
+          />
+        </View>
+      ) : post.imageUrl ? (
+        <Image
+          source={{ uri: post.imageUrl }}
+          className="w-full aspect-square bg-surface"
+          resizeMode="cover"
+        />
+      ) : null}
+
+      {/* Голосове повідомлення / Аудіодоріжка */}
+      {post.audioUrl ? (
+        <PostAudioPlayer
+          audioUrl={post.audioUrl}
+          duration={post.audioDuration}
+        />
+      ) : null}
 
       {/* Кнопки дій */}
       <View className="flex-row items-center justify-between px-3 py-3">

@@ -1,18 +1,22 @@
 // src/app/user/[id].tsx
-import {
-  View,
-  Text,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
-import { useLocalSearchParams, useRouter, Stack } from "expo-router";
-import { useQuery, useMutation } from "convex/react";
+import { COLORS } from "@/constants/theme";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { COLORS } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
+import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import React from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+// Завантажуємо порціями по 12 фотографій (4 ряди по 3 колонки)
+const PROFILE_PAGE_SIZE = 12;
 
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -21,8 +25,22 @@ export default function UserProfileScreen() {
 
   const currentUser = useQuery(api.users.currentUser);
   const profile = useQuery(api.users.getUserProfile, { id: targetUserId });
-  const posts = useQuery(api.posts.getPostsByUser, { userId: targetUserId });
-  const isFollowingUser = useQuery(api.follows.isFollowing, { followingId: targetUserId });
+
+  // Пагіноване завантаження публікацій іншого користувача
+  const {
+    results: posts,
+    status,
+    loadMore,
+    isLoading,
+  } = usePaginatedQuery(
+    api.posts.getPaginatedPostsByUser,
+    { userId: targetUserId },
+    { initialNumItems: PROFILE_PAGE_SIZE },
+  );
+
+  const isFollowingUser = useQuery(api.follows.isFollowing, {
+    followingId: targetUserId,
+  });
 
   const toggleFollow = useMutation(api.follows.toggleFollow);
 
@@ -36,7 +54,18 @@ export default function UserProfileScreen() {
     }
   };
 
-  if (profile === undefined || posts === undefined || isFollowingUser === undefined) {
+  const handleLoadMore = () => {
+    if (status === "CanLoadMore") {
+      loadMore(PROFILE_PAGE_SIZE);
+    }
+  };
+
+  // Початкове завантаження даних
+  if (
+    profile === undefined ||
+    isFollowingUser === undefined ||
+    (isLoading && posts.length === 0)
+  ) {
     return (
       <View className="flex-1 bg-black justify-center items-center">
         <ActivityIndicator size="large" color={COLORS.primary} />
@@ -44,11 +73,14 @@ export default function UserProfileScreen() {
     );
   }
 
+  // Якщо користувача не знайдено в базі
   if (profile === null) {
     return (
       <View className="flex-1 bg-black justify-center items-center px-6">
         <Ionicons name="person-remove-outline" size={56} color={COLORS.grey} />
-        <Text className="text-white text-lg font-bold mt-3">Користувача не знайдено</Text>
+        <Text className="text-white text-lg font-bold mt-3">
+          Користувача не знайдено
+        </Text>
         <TouchableOpacity
           onPress={() => router.back()}
           className="mt-4 px-5 py-2.5 bg-surface rounded-full border border-surfaceLight"
@@ -59,124 +91,168 @@ export default function UserProfileScreen() {
     );
   }
 
+  // Шапка профілю (рендериться всередині FlatList)
+  const renderHeader = () => (
+    <View>
+      <View className="p-4">
+        {/* Аватар та статистика */}
+        <View className="flex-row items-center justify-between mb-4">
+          {profile.image ? (
+            <Image
+              source={{ uri: profile.image }}
+              className="w-20 h-20 rounded-full border-2 border-surfaceLight"
+            />
+          ) : (
+            <View className="w-20 h-20 rounded-full bg-surface border-2 border-surfaceLight items-center justify-center">
+              <Ionicons name="person" size={38} color={COLORS.primary} />
+            </View>
+          )}
+
+          <View className="flex-row items-center flex-1 justify-around ml-4">
+            <View className="items-center">
+              <Text className="text-white text-lg font-bold">
+                {profile.posts ?? posts.length}
+              </Text>
+              <Text className="text-grey text-xs">Публікації</Text>
+            </View>
+
+            <View className="items-center">
+              <Text className="text-white text-lg font-bold">
+                {profile.followers ?? 0}
+              </Text>
+              <Text className="text-grey text-xs">Читачі</Text>
+            </View>
+
+            <View className="items-center">
+              <Text className="text-white text-lg font-bold">
+                {profile.following ?? 0}
+              </Text>
+              <Text className="text-grey text-xs">Стежить</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Ім'я та біографія */}
+        <View className="mb-4">
+          <Text className="text-white font-bold text-base">
+            {profile.fullname ?? profile.name ?? "Користувач"}
+          </Text>
+          {profile.bio ? (
+            <Text className="text-white/90 text-sm mt-1 leading-5">
+              {profile.bio}
+            </Text>
+          ) : null}
+        </View>
+
+        {/* Кнопка підписки або переходу у свій профіль */}
+        {isSelf ? (
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/profile")}
+            className="w-full bg-surface border border-surfaceLight py-2.5 rounded-xl items-center active:bg-surfaceLight"
+            activeOpacity={0.8}
+          >
+            <Text className="text-white font-semibold text-sm">
+              Перейти до свого профілю
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={handleFollowPress}
+            className={`w-full py-2.5 rounded-xl items-center justify-center ${
+              isFollowingUser
+                ? "bg-surface border border-surfaceLight active:bg-surfaceLight"
+                : "bg-primary active:opacity-80"
+            }`}
+            activeOpacity={0.8}
+          >
+            <Text className="text-white font-semibold text-sm">
+              {isFollowingUser ? "Ви стежите" : "Стежити"}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Заголовок сітки публікацій */}
+      <View className="flex-row border-t border-b border-surface py-3 justify-center items-center">
+        <Ionicons name="grid" size={20} color={COLORS.primary} />
+        <Text className="text-white text-xs font-semibold uppercase ml-2 tracking-wider">
+          Публікації
+        </Text>
+      </View>
+    </View>
+  );
+
   return (
     <View className="flex-1 bg-black">
       <Stack.Screen
         options={{
-          headerTitle: profile.username ? `@${profile.username}` : profile.fullname ?? "Профіль",
+          headerTitle: profile.username
+            ? `@${profile.username}`
+            : (profile.fullname ?? "Профіль"),
           headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} className="p-1 mr-2">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="p-1 mr-2"
+            >
               <Ionicons name="arrow-back" size={24} color={COLORS.white} />
             </TouchableOpacity>
           ),
         }}
       />
 
-      <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
-        <View className="p-4">
-          <View className="flex-row items-center justify-between mb-4">
-            {profile.image ? (
-              <Image
-                source={{ uri: profile.image }}
-                className="w-20 h-20 rounded-full border-2 border-surfaceLight"
-              />
-            ) : (
-              <View className="w-20 h-20 rounded-full bg-surface border-2 border-surfaceLight items-center justify-center">
-                <Ionicons name="person" size={38} color={COLORS.primary} />
-              </View>
-            )}
-
-            <View className="flex-row items-center flex-1 justify-around ml-4">
-              <View className="items-center">
-                <Text className="text-white text-lg font-bold">{posts.length}</Text>
-                <Text className="text-grey text-xs">Публікації</Text>
-              </View>
-
-              <View className="items-center">
-                <Text className="text-white text-lg font-bold">{profile.followers ?? 0}</Text>
-                <Text className="text-grey text-xs">Читачі</Text>
-              </View>
-
-              <View className="items-center">
-                <Text className="text-white text-lg font-bold">{profile.following ?? 0}</Text>
-                <Text className="text-grey text-xs">Стежить</Text>
-              </View>
-            </View>
-          </View>
-
-          <View className="mb-4">
-            <Text className="text-white font-bold text-base">
-              {profile.fullname ?? profile.name ?? "Користувач"}
-            </Text>
-            {profile.bio ? (
-              <Text className="text-white/90 text-sm mt-1 leading-5">{profile.bio}</Text>
-            ) : null}
-          </View>
-
-          {isSelf ? (
+      {/* Віртуалізована сітка 3x3 */}
+      <FlatList
+        data={posts}
+        keyExtractor={(item) => item._id}
+        numColumns={3}
+        ListHeaderComponent={renderHeader}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 60 }}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        renderItem={({ item }) => (
+          <View className="w-1/3 aspect-square p-0.5">
             <TouchableOpacity
-              onPress={() => router.push("/profile")}
-              className="w-full bg-surface border border-surfaceLight py-2.5 rounded-xl items-center active:bg-surfaceLight"
               activeOpacity={0.8}
+              className="w-full h-full bg-surface items-center justify-center overflow-hidden"
+              onPress={() => router.push(`/post/${item._id}` as any)}
             >
-              <Text className="text-white font-semibold text-sm">Перейти до свого профілю</Text>
+              {item.imageUrl ? (
+                <Image
+                  source={{ uri: item.imageUrl }}
+                  className="w-full h-full"
+                  resizeMode="cover"
+                />
+              ) : item.videoUrl && item.isVideoNote ? (
+                <View className="w-full h-full bg-surfaceLight items-center justify-center">
+                  <Ionicons name="videocam" size={28} color={COLORS.primary} />
+                  <Text className="text-[10px] text-grey mt-1">Відео</Text>
+                </View>
+              ) : null}
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={handleFollowPress}
-              className={`w-full py-2.5 rounded-xl items-center justify-center ${
-                isFollowingUser
-                  ? "bg-surface border border-surfaceLight active:bg-surfaceLight"
-                  : "bg-primary active:opacity-80"
-              }`}
-              activeOpacity={0.8}
-            >
-              <Text
-                className={`font-semibold text-sm ${
-                  isFollowingUser ? "text-white" : "text-white"
-                }`}
-              >
-                {isFollowingUser ? "Ви стежите" : "Стежити"}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        <View className="flex-row border-t border-b border-surface py-3 justify-center items-center">
-          <Ionicons name="grid" size={20} color={COLORS.primary} />
-          <Text className="text-white text-xs font-semibold uppercase ml-2 tracking-wider">
-            Публікації
-          </Text>
-        </View>
-
-        {posts.length === 0 ? (
-          <View className="py-16 items-center px-6">
-            <Ionicons name="images-outline" size={48} color={COLORS.grey} />
-            <Text className="text-white text-base font-bold mt-2">Немає публікацій</Text>
-            <Text className="text-grey text-sm text-center mt-1">
-              Користувач ще не опублікував жодного фото.
-            </Text>
-          </View>
-        ) : (
-          <View className="flex-row flex-wrap p-0.5 pb-20">
-            {posts.map((post) => (
-              <View key={post._id} className="w-1/3 aspect-square p-0.5">
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  className="w-full h-full bg-surface"
-                  onPress={() => router.push(`/post/${post._id}` as any)}
-                >
-                  <Image
-                    source={{ uri: post.imageUrl }}
-                    className="w-full h-full"
-                    resizeMode="cover"
-                  />
-                </TouchableOpacity>
-              </View>
-            ))}
           </View>
         )}
-      </ScrollView>
+        ListFooterComponent={
+          status === "LoadingMore" ? (
+            <View className="py-4 items-center w-full">
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            </View>
+          ) : null
+        }
+        ListEmptyComponent={
+          !isLoading ? (
+            <View className="py-16 items-center px-6">
+              <Ionicons name="images-outline" size={48} color={COLORS.grey} />
+              <Text className="text-white text-base font-bold mt-2">
+                Немає публікацій
+              </Text>
+              <Text className="text-grey text-sm text-center mt-1">
+                Користувач ще не опублікував жодного фото.
+              </Text>
+            </View>
+          ) : null
+        }
+      />
     </View>
   );
 }

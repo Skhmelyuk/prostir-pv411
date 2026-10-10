@@ -18,11 +18,20 @@ export default defineSchema({
 
   posts: defineTable({
     userId: v.id("users"),
-    imageUrl: v.string(),
-    storageId: v.id("_storage"),
+    imageUrl: v.optional(v.string()),
+    storageId: v.optional(v.id("_storage")),
     caption: v.optional(v.string()),
     likes: v.number(),
     comments: v.number(),
+    // Аудіодоріжка поста
+    audioUrl: v.optional(v.string()),
+    audioStorageId: v.optional(v.id("_storage")),
+    audioDuration: v.optional(v.number()),
+    // Відеокружечки
+    videoUrl: v.optional(v.string()),
+    videoStorageId: v.optional(v.id("_storage")),
+    videoDuration: v.optional(v.number()),
+    isVideoNote: v.optional(v.boolean()),
   }).index("by_user", ["userId"]),
 
   likes: defineTable({

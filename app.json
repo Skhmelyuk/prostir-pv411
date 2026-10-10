@@ -8,7 +8,11 @@
     "scheme": "prostirpv411",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Додатку Prostir потрібен доступ до камери для запису круглих відеоповідомлень.",
+        "NSMicrophoneUsageDescription": "Додатку Prostir потрібен доступ до мікрофона для запису звуку у відеоповідомленнях."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +21,11 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -33,7 +41,22 @@
           "imageWidth": 76
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Дозвольте Prostir доступ до мікрофона для запису голосових сповіщень до публікацій.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Додатку Prostir потрібен доступ до камери для запису відеокружечків.",
+          "microphonePermission": "Додатку Prostir потрібен доступ до мікрофона для запису звуку у відеокружечках."
+        }
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,

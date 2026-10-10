@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { formatDistanceToNow } from "date-fns";
 import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "expo-router";
+import { COLORS } from "@/constants/theme";
 
 export interface NotificationProps {
   notification: {
@@ -16,7 +17,7 @@ export interface NotificationProps {
     };
     post: {
       _id: Id<"posts">;
-      imageUrl: string;
+      imageUrl?: string;
     } | null;
     comment?: string;
     _creationTime: number;
@@ -81,13 +82,17 @@ export function NotificationItem({ notification }: NotificationProps) {
       
 
       {/* Мініатюра поста, до якого відноситься сповіщення */}
-      {notification.post && (
+      {notification.post?.imageUrl ? (
         <Image
           source={{ uri: notification.post.imageUrl }}
           className="w-11 h-11 rounded-lg bg-surface"
           resizeMode="cover"
         />
-      )}
+      ) : notification.post ? (
+        <View className="w-11 h-11 rounded-lg bg-surface items-center justify-center border border-surfaceLight">
+          <Ionicons name="videocam" size={18} color={COLORS.primary} />
+        </View>
+      ) : null}
     </View>
   );
 }
